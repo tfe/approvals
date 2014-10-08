@@ -5,10 +5,11 @@ module Approvals
       attr_accessor :namer
     end
 
-    attr_reader :subject, :namer, :failure
+    attr_reader :subject, :namer, :verifier, :failure
     def initialize(subject, options = {})
       @subject = subject
       @namer = options[:namer] || default_namer(options[:name])
+      @verifier = options[:verifier]
       @format = options[:format] || identify_format
     end
 
@@ -63,10 +64,16 @@ module Approvals
     BINARY_FORMATS = [:binary]
     
     def received_matches?
-      if BINARY_FORMATS.include?(@format) # Read without ERB
-        IO.read(received_path).chomp == IO.read(approved_path).chomp
+      received_content = IO.read(received_path).chomp
+      approved_content = IO.read(approved_path).chomp
+      if !BINARY_FORMATS.include?(@format) # Read with ERB
+        approved_content = ERB.new(approved_content).result
+      end
+
+      if verifier
+        verifier(approved_content, received_content)
       else
-        IO.read(received_path).chomp == ERB.new(IO.read(approved_path).chomp).result
+        approved_content == received_content
       end
     end
 
