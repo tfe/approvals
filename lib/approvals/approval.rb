@@ -5,11 +5,11 @@ module Approvals
       attr_accessor :namer
     end
 
-    attr_reader :subject, :namer, :verifier, :failure
+    attr_reader :subject, :namer, :comparator, :failure
     def initialize(subject, options = {})
       @subject = subject
       @namer = options[:namer] || default_namer(options[:name])
-      @verifier = options[:verifier]
+      @comparator = options[:comparator]
       @format = options[:format] || identify_format
     end
 
@@ -70,8 +70,8 @@ module Approvals
         approved_content = ERB.new(approved_content).result
       end
 
-      if verifier
-        verifier(approved_content, received_content)
+      if comparator
+        comparator(approved_content, received_content)
       else
         approved_content == received_content
       end
